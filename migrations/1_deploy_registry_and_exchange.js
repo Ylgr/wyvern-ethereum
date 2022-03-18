@@ -10,8 +10,8 @@ module.exports = async (deployer, network) => {
         await deployer.deploy(WyvernExchange,
             '0x588CcA53d3039c934c52f523867a0ecf05a86c45',
             WyvernTokenTransferProxy.address,
-            '0x29AAC54d6c20e80AB359561E1C61AC2Cd22AD85D', // BIC address
-            '0xE56d14686572F7C1556Bc0A846D1b27Ce3489981', // fee
+            '0x43b67834264a9C9B18692A91e5C86b5f6dBAbA21', // BIC address
+            '0xF4402fE2B09da7c02504DC308DBc307834CE56fE' // fee
             )
 
     }

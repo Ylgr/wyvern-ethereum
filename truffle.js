@@ -40,8 +40,7 @@ module.exports = {
     bsc_testnet: {
       network_id: 97,
       provider: () => new HDWalletProvider(
-          // process.env.PRIVATE_KEY,
-          'c8153958ab784c94d8cdb17b946f68a5d8ae75b629852a7651468f1f649919b2',
+          process.env.PRIVATE_KEY,
           `https://data-seed-prebsc-1-s1.binance.org:8545`
 
       ),
@@ -60,8 +59,8 @@ module.exports = {
     'truffle-plugin-verify'
   ],
   api_keys: {
-    etherscan: 'c8153958ab784c94d8cdb17b946f68a5d8ae75b629852a7651468f1f649919b2',
-    bscscan: 'c8153958ab784c94d8cdb17b946f68a5d8ae75b629852a7651468f1f649919b2',
-    testnet: 'c8153958ab784c94d8cdb17b946f68a5d8ae75b629852a7651468f1f649919b2'
+    etherscan: process.env.BSC_KEY,
+    bscscan: process.env.BSC_KEY,
+    testnet: process.env.BSC_KEY
   }
 }
