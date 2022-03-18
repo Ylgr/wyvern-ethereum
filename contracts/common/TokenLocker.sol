@@ -1,7 +1,7 @@
 /*
 
   Contract to allow an owning contract to receive tokens (ERC20, not ERC223), transfer them at will, and do absolutely nothing else.
-  
+
   Used to allow DAO shareholders to lock tokens for vote delegation but prevent the DAO from doing anything with the locked tokens.
 
   Much thanks to @adamkolar on Github - https://github.com/ProjectWyvern/wyvern-ethereum/issues/4
@@ -17,7 +17,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
  * @author Project Wyvern Developers
  */
 contract TokenLocker {
-    
+
     address public owner;
 
     ERC20 public token;
@@ -31,7 +31,7 @@ contract TokenLocker {
         token = tokenAddr;
     }
 
-    /** 
+    /**
      *  @dev Call the ERC20 `transfer` function on the underlying token contract
      *  @param dest Token destination
      *  @param amount Amount of tokens to be transferred

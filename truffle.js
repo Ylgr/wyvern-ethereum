@@ -1,3 +1,5 @@
+const HDWalletProvider = require('truffle-hdwallet-provider');
+
 module.exports = {
   networks: {
     development: {
@@ -34,6 +36,18 @@ module.exports = {
       network_id: 1,
       gas: 6700000,
       gasPrice: 6110000000
+    },
+    bsc_testnet: {
+      network_id: 97,
+      provider: () => new HDWalletProvider(
+          // process.env.PRIVATE_KEY,
+          'c8153958ab784c94d8cdb17b946f68a5d8ae75b629852a7651468f1f649919b2',
+          `https://data-seed-prebsc-1-s1.binance.org:8545`
+
+      ),
+      // confirmations: 10,
+      timeoutBlocks: 200,
+      skipDryRun: true
     }
   },
   solc: {
@@ -41,5 +55,13 @@ module.exports = {
       enabled: true,
       runs: 200
     }
+  },
+  plugins: [
+    'truffle-plugin-verify'
+  ],
+  api_keys: {
+    etherscan: 'c8153958ab784c94d8cdb17b946f68a5d8ae75b629852a7651468f1f649919b2',
+    bscscan: 'c8153958ab784c94d8cdb17b946f68a5d8ae75b629852a7651468f1f649919b2',
+    testnet: 'c8153958ab784c94d8cdb17b946f68a5d8ae75b629852a7651468f1f649919b2'
   }
 }
