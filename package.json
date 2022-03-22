@@ -31,7 +31,8 @@
     "analyze": "scripts/analyze.sh",
     "coverage": "scripts/coverage.sh",
     "flatten": "scripts/flatten.sh",
-    "doc": "scripts/doc.sh"
+    "doc": "scripts/doc.sh",
+    "ganache-cli": "ganache-cli -d -p 8545 --gasLimit=10000000"
   },
   "repository": {
     "type": "git",

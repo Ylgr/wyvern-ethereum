@@ -41,7 +41,7 @@ const finalGas = () => {
 }
 
 const hashOrder = (order) => {
-  return web3.utils.soliditySha3(
+  return Web3.utils.soliditySha3(
     {type: 'address', value: order.exchange},
     {type: 'address', value: order.maker},
     {type: 'address', value: order.taker},
