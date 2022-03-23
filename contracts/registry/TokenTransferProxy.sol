@@ -29,7 +29,7 @@ contract TokenTransferProxy {
         public
         returns (bool)
     {
-        require(registry.contracts(msg.sender));
+        require(registry.contracts(msg.sender), "contract not registry");
         return ERC20(token).transferFrom(from, to, amount);
     }
 

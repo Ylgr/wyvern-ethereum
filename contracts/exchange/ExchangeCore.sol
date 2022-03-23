@@ -4,7 +4,7 @@
 
   Let us suppose two agents interacting with a distributed ledger have utility functions preferencing certain states of that ledger over others.
   Aiming to maximize their utility, these agents may construct with their utility functions along with the present ledger state a mapping of state transitions (transactions) to marginal utilities.
-  Any composite state transition with positive marginal utility for and enactable by the combined permissions of both agents thus is a mutually desirable trade, and the trustless 
+  Any composite state transition with positive marginal utility for and enactable by the combined permissions of both agents thus is a mutually desirable trade, and the trustless
   code execution provided by a distributed ledger renders the requisite atomicity trivial.
 
   Relative to this model, this instantiation makes two concessions to practicality:
@@ -26,7 +26,7 @@
     - that is to say, wherever the two (transaction => bool) functions intersect.
 
   Future protocol versions may improve upon this structure in capability or usability according to protocol user feedback demand, with upgrades enacted by the Wyvern DAO.
- 
+
 */
 
 pragma solidity 0.4.23;
@@ -78,7 +78,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
     /* Inverse basis point. */
     uint public constant INVERSE_BASIS_POINT = 10000;
 
-    /* An ECDSA signature. */ 
+    /* An ECDSA signature. */
     struct Sig {
         /* v parameter */
         uint8 v;
@@ -137,7 +137,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         /* Order salt, used to prevent duplicate hashes. */
         uint salt;
     }
-    
+
     event OrderApprovedPartOne    (bytes32 indexed hash, address exchange, address indexed maker, address taker, uint makerRelayerFee, uint takerRelayerFee, uint makerProtocolFee, uint takerProtocolFee, address indexed feeRecipient, FeeMethod feeMethod, SaleKindInterface.Side side, SaleKindInterface.SaleKind saleKind, address target);
     event OrderApprovedPartTwo    (bytes32 indexed hash, AuthenticatedProxy.HowToCall howToCall, bytes calldata, bytes replacementPattern, address staticTarget, bytes staticExtradata, address paymentToken, uint basePrice, uint extra, uint listingTime, uint expirationTime, uint salt, bool orderbookInclusionDesired);
     event OrderCancelled          (bytes32 indexed hash);
@@ -187,7 +187,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         internal
     {
         if (amount > 0) {
-            require(tokenTransferProxy.transferFrom(token, from, to, amount));
+            require(tokenTransferProxy.transferFrom(token, from, to, amount), "get error when transfer token");
         }
     }
 
@@ -349,7 +349,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
      * @param order Order to validate
      * @param sig ECDSA signature
      */
-    function validateOrder(bytes32 hash, Order memory order, Sig memory sig) 
+    function validateOrder(bytes32 hash, Order memory order, Sig memory sig)
         internal
         view
         returns (bool)
@@ -365,7 +365,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         if (cancelledOrFinalized[hash]) {
             return false;
         }
-        
+
         /* Order authentication. Order must be either:
         /* (a) previously approved */
         if (approvedOrders[hash]) {
@@ -400,15 +400,15 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         require(!approvedOrders[hash]);
 
         /* EFFECTS */
-    
+
         /* Mark order as approved. */
         approvedOrders[hash] = true;
-  
+
         /* Log approval event. Must be split in two due to Solidity stack size limitations. */
         {
             emit OrderApprovedPartOne(hash, order.exchange, order.maker, order.taker, order.makerRelayerFee, order.takerRelayerFee, order.makerProtocolFee, order.takerProtocolFee, order.feeRecipient, order.feeMethod, order.side, order.saleKind, order.target);
         }
-        {   
+        {
             emit OrderApprovedPartTwo(hash, order.howToCall, order.calldata, order.replacementPattern, order.staticTarget, order.staticExtradata, order.paymentToken, order.basePrice, order.extra, order.listingTime, order.expirationTime, order.salt, orderbookInclusionDesired);
         }
     }
@@ -418,7 +418,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
      * @param order Order to cancel
      * @param sig ECDSA signature
      */
-    function cancelOrder(Order memory order, Sig memory sig) 
+    function cancelOrder(Order memory order, Sig memory sig)
         internal
     {
         /* CHECKS */
@@ -428,9 +428,9 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
 
         /* Assert sender is authorized to cancel order. */
         require(msg.sender == order.maker);
-  
+
         /* EFFECTS */
-      
+
         /* Mark order as cancelled, preventing it from being matched. */
         cancelledOrFinalized[hash] = true;
 
@@ -444,7 +444,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
      * @return The current price of the order
      */
     function calculateCurrentPrice (Order memory order)
-        internal  
+        internal
         view
         returns (uint)
     {
@@ -470,7 +470,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
 
         /* Require price cross. */
         require(buyPrice >= sellPrice);
-        
+
         /* Maker/taker priority. */
         return sell.feeRecipient != address(0) ? sellPrice : buyPrice;
     }
@@ -494,7 +494,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
 
         /* If paying using a token (not Ether), transfer tokens. This is done prior to fee payments to that a seller will have tokens before being charged fees. */
         if (price > 0 && sell.paymentToken != address(0)) {
-            transferTokens(sell.paymentToken, buy.maker, sell.maker, price);
+            transferTokens(sell.paymentToken, buy.maker, sell.maker, price); // Die here
         }
 
         /* Amount that will be received by seller (for Ether). */
@@ -506,7 +506,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         /* Determine maker/taker and charge fees accordingly. */
         if (sell.feeRecipient != address(0)) {
             /* Sell-side order is maker. */
-      
+
             /* Assert taker fee is less than or equal to maximum fee specified by buyer. */
             require(sell.takerRelayerFee <= buy.takerRelayerFee);
 
@@ -599,7 +599,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
             } else {
                 /* Charge maker fee to buyer. */
                 chargeProtocolFee(buy.maker, buy.feeRecipient, buy.makerRelayerFee);
-      
+
                 /* Charge taker fee to seller. */
                 chargeProtocolFee(sell.maker, buy.feeRecipient, buy.takerRelayerFee);
             }
@@ -634,7 +634,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
     {
         return (
             /* Must be opposite-side. */
-            (buy.side == SaleKindInterface.Side.Buy && sell.side == SaleKindInterface.Side.Sell) &&     
+            (buy.side == SaleKindInterface.Side.Buy && sell.side == SaleKindInterface.Side.Sell) &&
             /* Must use same fee method. */
             (buy.feeMethod == sell.feeMethod) &&
             /* Must use same payment token. */
@@ -667,7 +667,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         reentrancyGuard
     {
         /* CHECKS */
-      
+
         /* Ensure buy order validity and calculate hash if necessary. */
         bytes32 buyHash;
         if (buy.maker == msg.sender) {
@@ -683,7 +683,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         } else {
             sellHash = requireValidOrder(sell, sellSig);
         }
-        
+
         /* Must be matchable. */
         require(ordersCanMatch(buy, sell));
 
@@ -694,8 +694,8 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
             size := extcodesize(target)
         }
         require(size > 0);
-      
-        /* Must match calldata after replacement, if specified. */ 
+
+        /* Must match calldata after replacement, if specified. */
         if (buy.replacementPattern.length > 0) {
           ArrayUtils.guardedArrayReplace(buy.calldata, sell.calldata, buy.replacementPattern);
         }
@@ -708,7 +708,7 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         OwnableDelegateProxy delegateProxy = registry.proxies(sell.maker);
 
         /* Proxy must exist. */
-        require(delegateProxy != address(0));
+        require(delegateProxy != address(0), "Proxy not existed");
 
         /* Assert implementation. */
         require(delegateProxy.implementation() == registry.delegateProxyImplementation());
@@ -716,38 +716,38 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         /* Access the passthrough AuthenticatedProxy. */
         AuthenticatedProxy proxy = AuthenticatedProxy(delegateProxy);
 
-        /* EFFECTS */
-
-        /* Mark previously signed or approved orders as finalized. */
-        if (msg.sender != buy.maker) {
-            cancelledOrFinalized[buyHash] = true;
-        }
-        if (msg.sender != sell.maker) {
-            cancelledOrFinalized[sellHash] = true;
-        }
-
-        /* INTERACTIONS */
-
-        /* Execute funds transfer and pay fees. */
-        uint price = executeFundsTransfer(buy, sell);
-
-        /* Execute specified call through proxy. */
-        require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
-
-        /* Static calls are intentionally done after the effectful call so they can check resulting state. */
-
-        /* Handle buy-side static call if specified. */
-        if (buy.staticTarget != address(0)) {
-            require(staticCall(buy.staticTarget, sell.calldata, buy.staticExtradata));
-        }
-
-        /* Handle sell-side static call if specified. */
-        if (sell.staticTarget != address(0)) {
-            require(staticCall(sell.staticTarget, sell.calldata, sell.staticExtradata));
-        }
-
-        /* Log match event. */
-        emit OrdersMatched(buyHash, sellHash, sell.feeRecipient != address(0) ? sell.maker : buy.maker, sell.feeRecipient != address(0) ? buy.maker : sell.maker, price, metadata);
+//        /* EFFECTS */
+//
+//        /* Mark previously signed or approved orders as finalized. */
+//        if (msg.sender != buy.maker) {
+//            cancelledOrFinalized[buyHash] = true;
+//        }
+//        if (msg.sender != sell.maker) {
+//            cancelledOrFinalized[sellHash] = true;
+//        }
+//
+//        /* INTERACTIONS */
+//
+//        /* Execute funds transfer and pay fees. */
+//        uint price = executeFundsTransfer(buy, sell);
+//
+//        /* Execute specified call through proxy. */
+//        require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
+//
+//        /* Static calls are intentionally done after the effectful call so they can check resulting state. */
+//
+//        /* Handle buy-side static call if specified. */
+//        if (buy.staticTarget != address(0)) {
+//            require(staticCall(buy.staticTarget, sell.calldata, buy.staticExtradata));
+//        }
+//
+//        /* Handle sell-side static call if specified. */
+//        if (sell.staticTarget != address(0)) {
+//            require(staticCall(sell.staticTarget, sell.calldata, sell.staticExtradata));
+//        }
+//
+//        /* Log match event. */
+//        emit OrdersMatched(buyHash, sellHash, sell.feeRecipient != address(0) ? sell.maker : buy.maker, sell.feeRecipient != address(0) ? buy.maker : sell.maker, price, metadata);
     }
 
 }

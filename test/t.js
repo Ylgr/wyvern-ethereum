@@ -23,22 +23,31 @@ contract('WyvernExchange', (accounts) => {
     tokenInstance = await TestToken.deployed({from: owner})
     exchangeInstance = await WyvernExchange.deployed({from: owner})
     registryInstance = await WyvernProxyRegistry.deployed({from: owner})
-    proxy = registryInstance.address
     tokenTransferProxyInstance = await WyvernTokenTransferProxy.deployed({from: owner})
   })
 
   it('create automatch tx', async () => {
+
+    await registryInstance.registerProxy({from: owner})
+
+    proxy = await registryInstance.proxies(owner)
+
     let buy = makeOrder(exchangeInstance.address, false)
     let sell = makeOrder(exchangeInstance.address, true)
     sell.side = 1
     buy.feeMethod = 1
     sell.feeMethod = 1
-    buy.paymentToken = '0x0000000000000000000000000000000000000000'
-    sell.paymentToken = '0x0000000000000000000000000000000000000000'
+    // buy.paymentToken = '0x0000000000000000000000000000000000000000'
+    // sell.paymentToken = '0x0000000000000000000000000000000000000000'
+    buy.paymentToken = tokenInstance.address
+    sell.paymentToken = tokenInstance.address
     buy.basePrice = new BigNumber(10000)
     sell.basePrice = new BigNumber(10000)
     sell.makerProtocolFee = new BigNumber(100)
     sell.makerRelayerFee = new BigNumber(100)
+
+    const MAX_INT = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+    await tokenInstance.approve(tokenTransferProxyInstance.address, MAX_INT, {from: owner})
 
     const canOderMatch = await exchangeInstance.ordersCanMatch_(
           [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken, sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
@@ -80,7 +89,6 @@ contract('WyvernExchange', (accounts) => {
     console.log('sellOrder: ', sellOrder)
     const buyHash = hashOrder(buy)
     const sellHash = hashOrder(sell)
-
     let buySignature = await web3.eth.sign(buyHash, accounts[0])
     buySignature = buySignature.substr(2)
     const br = '0x' + buySignature.slice(0, 64)
@@ -103,8 +111,9 @@ contract('WyvernExchange', (accounts) => {
           buy.staticExtradata,
           sell.staticExtradata,
           [bv, sv],
-          [br, bs, sr, ss, '0x0000000000000000000000000000000000000000000000000000000000000000']
-      ).send({from: owner})
+          [br, bs, sr, ss, '0x0000000000000000000000000000000000000000000000000000000000000000'],
+          {from: owner}
+        )
     console.log('autoMatchingOrder: ', autoMatchingOrder)
   })
 
