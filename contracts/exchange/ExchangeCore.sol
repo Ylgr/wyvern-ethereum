@@ -716,38 +716,38 @@ contract ExchangeCore is ReentrancyGuarded, Ownable {
         /* Access the passthrough AuthenticatedProxy. */
         AuthenticatedProxy proxy = AuthenticatedProxy(delegateProxy);
 
-//        /* EFFECTS */
-//
-//        /* Mark previously signed or approved orders as finalized. */
-//        if (msg.sender != buy.maker) {
-//            cancelledOrFinalized[buyHash] = true;
-//        }
-//        if (msg.sender != sell.maker) {
-//            cancelledOrFinalized[sellHash] = true;
-//        }
-//
-//        /* INTERACTIONS */
-//
-//        /* Execute funds transfer and pay fees. */
-//        uint price = executeFundsTransfer(buy, sell);
-//
-//        /* Execute specified call through proxy. */
-//        require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
-//
-//        /* Static calls are intentionally done after the effectful call so they can check resulting state. */
-//
-//        /* Handle buy-side static call if specified. */
-//        if (buy.staticTarget != address(0)) {
-//            require(staticCall(buy.staticTarget, sell.calldata, buy.staticExtradata));
-//        }
-//
-//        /* Handle sell-side static call if specified. */
-//        if (sell.staticTarget != address(0)) {
-//            require(staticCall(sell.staticTarget, sell.calldata, sell.staticExtradata));
-//        }
-//
-//        /* Log match event. */
-//        emit OrdersMatched(buyHash, sellHash, sell.feeRecipient != address(0) ? sell.maker : buy.maker, sell.feeRecipient != address(0) ? buy.maker : sell.maker, price, metadata);
+        /* EFFECTS */
+
+        /* Mark previously signed or approved orders as finalized. */
+        if (msg.sender != buy.maker) {
+            cancelledOrFinalized[buyHash] = true;
+        }
+        if (msg.sender != sell.maker) {
+            cancelledOrFinalized[sellHash] = true;
+        }
+
+        /* INTERACTIONS */
+
+        /* Execute funds transfer and pay fees. */
+        uint price = executeFundsTransfer(buy, sell);
+
+        /* Execute specified call through proxy. */
+        require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));
+
+        /* Static calls are intentionally done after the effectful call so they can check resulting state. */
+
+        /* Handle buy-side static call if specified. */
+        if (buy.staticTarget != address(0)) {
+            require(staticCall(buy.staticTarget, sell.calldata, buy.staticExtradata));
+        }
+
+        /* Handle sell-side static call if specified. */
+        if (sell.staticTarget != address(0)) {
+            require(staticCall(sell.staticTarget, sell.calldata, sell.staticExtradata));
+        }
+
+        /* Log match event. */
+        emit OrdersMatched(buyHash, sellHash, sell.feeRecipient != address(0) ? sell.maker : buy.maker, sell.feeRecipient != address(0) ? buy.maker : sell.maker, price, metadata);
     }
 
 }
