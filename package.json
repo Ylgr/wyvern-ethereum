@@ -13,7 +13,8 @@
     "truffle": "^4.1.3",
     "truffle-compile": "^3.0.10",
     "truffle-hdwallet-provider": "^1.0.17",
-    "web3": "^1.7.1"
+    "web3": "^1.7.1",
+    "wyvern-schemas": "git+https://github.com/ProjectOpenSea/wyvern-schemas.git#0a8d569931ddb6faa6e96f5a60fa2f83f0a8750e"
   },
   "devDependencies": {
     "eslint-config-standard": "^10.2.1",

@@ -5,8 +5,12 @@ const TestToken = artifacts.require('TestToken')
 const WyvernExchange = artifacts.require('WyvernExchange')
 const WyvernProxyRegistry = artifacts.require('WyvernProxyRegistry')
 const WyvernTokenTransferProxy = artifacts.require('WyvernTokenTransferProxy')
+const TestNft = artifacts.require('TestNft')
 const BigNumber = require('bignumber.js')
 const Web3 = require('web3')
+const WyvernSchemas = require('wyvern-schemas')
+const {encodeBuy, encodeSell} = WyvernSchemas
+
 const provider = new Web3.providers.HttpProvider('http://localhost:8545')
 const web3 = new Web3(provider)
 
@@ -14,6 +18,7 @@ contract('WyvernExchange', (accounts) => {
   const owner = accounts[0]
 
   let tokenInstance
+  let nftInstance
   let exchangeInstance
   let registryInstance
   let tokenTransferProxyInstance
@@ -21,6 +26,7 @@ contract('WyvernExchange', (accounts) => {
     // eslint-disable-next-line no-undef
   before(async () => {
     tokenInstance = await TestToken.deployed({from: owner})
+    nftInstance = await TestNft.deployed({from: owner})
     exchangeInstance = await WyvernExchange.deployed({from: owner})
     registryInstance = await WyvernProxyRegistry.deployed({from: owner})
     tokenTransferProxyInstance = await WyvernTokenTransferProxy.deployed({from: owner})
@@ -46,6 +52,40 @@ contract('WyvernExchange', (accounts) => {
     sell.makerProtocolFee = new BigNumber(100)
     sell.makerRelayerFee = new BigNumber(100)
 
+    const _getSchema = () => {
+      const schemaName_ = 'ERC721'
+      const schema = WyvernSchemas.schemas['main'].filter(
+          (s) => s.name == schemaName_
+      )[0]
+
+      if (!schema) {
+        throw new Error(
+            `Trading for this asset (${schemaName_}) is not yet supported. Please contact us or check back later!`
+        )
+      }
+      return schema
+    }
+
+    const schema = _getSchema()
+    const sellSpec = encodeSell(
+        schema,
+        {address: nftInstance.address, id: '20'},
+        owner
+    )
+    const buySpec = encodeBuy(
+        schema,
+        {address: nftInstance.address, id: '20'},
+        owner
+    )
+
+    buy.calldata = buySpec.calldata
+    buy.replacementPattern = buySpec.replacementPattern
+    buy.target = buySpec.target
+
+    sell.calldata = sellSpec.calldata
+    sell.replacementPattern = sellSpec.replacementPattern
+    sell.target = sellSpec.target
+
     const MAX_INT = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
     await tokenInstance.approve(tokenTransferProxyInstance.address, MAX_INT, {from: owner})
 
@@ -62,31 +102,31 @@ contract('WyvernExchange', (accounts) => {
       )
     console.log('canOderMatch: ', canOderMatch)
 
-    const buyOrder = await exchangeInstance.approveOrder_(
-          [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken],
-          [buy.makerRelayerFee, buy.takerRelayerFee, buy.makerProtocolFee, buy.takerProtocolFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt],
-          buy.feeMethod,
-          buy.side,
-          buy.saleKind,
-          buy.howToCall,
-          buy.calldata,
-          buy.replacementPattern,
-          buy.staticExtradata,
-          true, {from: owner})
-    console.log('buyOrder: ', buyOrder)
-
-    const sellOrder = await exchangeInstance.approveOrder_(
-          [sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
-          [sell.makerRelayerFee, sell.takerRelayerFee, sell.makerProtocolFee, sell.takerProtocolFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
-          sell.feeMethod,
-          sell.side,
-          sell.saleKind,
-          sell.howToCall,
-          sell.calldata,
-          sell.replacementPattern,
-          sell.staticExtradata,
-          true, {from: owner})
-    console.log('sellOrder: ', sellOrder)
+    // const buyOrder = await exchangeInstance.approveOrder_(
+    //       [buy.exchange, buy.maker, buy.taker, buy.feeRecipient, buy.target, buy.staticTarget, buy.paymentToken],
+    //       [buy.makerRelayerFee, buy.takerRelayerFee, buy.makerProtocolFee, buy.takerProtocolFee, buy.basePrice, buy.extra, buy.listingTime, buy.expirationTime, buy.salt],
+    //       buy.feeMethod,
+    //       buy.side,
+    //       buy.saleKind,
+    //       buy.howToCall,
+    //       buy.calldata,
+    //       buy.replacementPattern,
+    //       buy.staticExtradata,
+    //       true, {from: owner})
+    // console.log('buyOrder: ', buyOrder)
+    //
+    // const sellOrder = await exchangeInstance.approveOrder_(
+    //       [sell.exchange, sell.maker, sell.taker, sell.feeRecipient, sell.target, sell.staticTarget, sell.paymentToken],
+    //       [sell.makerRelayerFee, sell.takerRelayerFee, sell.makerProtocolFee, sell.takerProtocolFee, sell.basePrice, sell.extra, sell.listingTime, sell.expirationTime, sell.salt],
+    //       sell.feeMethod,
+    //       sell.side,
+    //       sell.saleKind,
+    //       sell.howToCall,
+    //       sell.calldata,
+    //       sell.replacementPattern,
+    //       sell.staticExtradata,
+    //       true, {from: owner})
+    // console.log('sellOrder: ', sellOrder)
     const buyHash = hashOrder(buy)
     const sellHash = hashOrder(sell)
     let buySignature = await web3.eth.sign(buyHash, accounts[0])
@@ -114,7 +154,10 @@ contract('WyvernExchange', (accounts) => {
           [br, bs, sr, ss, '0x0000000000000000000000000000000000000000000000000000000000000000'],
           {from: owner}
         )
-    console.log('autoMatchingOrder: ', autoMatchingOrder)
+
+    console.log('owner: ', owner)
+    console.log('nft: ', nftInstance.address)
+    console.log('autoMatchingOrder: ', autoMatchingOrder.receipt.rawLogs)
   })
 
   const makeOrder = (exchange, isMaker) => ({
